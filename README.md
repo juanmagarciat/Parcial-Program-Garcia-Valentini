@@ -49,6 +49,8 @@ Esta función consolida todos los ítems de todos los archivos `Datos.csv` dispe
 * Se utiliza `try...except` para capturar `OSError` (errores al crear carpetas o escribir) y `FileNotFoundError`, como en la importación o al leer el directorio base.
 
 ---
+## Link del video: https://drive.google.com/file/d/1Cw488k3f2-pU9SSjwailgi4Sr-ar4kTA/view?usp=sharing
+
 
 ## 3. Instrucciones de Uso
 
