@@ -1,0 +1,107 @@
+nombre,poblacion,superficie,continente,region,subregion
+India,1463865525,3287263,Asia,SinRegion,SinSubregion
+China,1416096094,9596960,Asia,SinRegion,SinSubregion
+Indonesia,285721236,1904569,Asia,SinRegion,SinSubregion
+Pakistan,255219554,881913,Asia,SinRegion,SinSubregion
+Bangladesh,175686899,144000,Asia,SinRegion,SinSubregion
+Japon,123103479,377975,Asia,SinRegion,SinSubregion
+Filipinas,116786962,300000,Asia,SinRegion,SinSubregion
+Vietnam,101598527,331212,Asia,SinRegion,SinSubregion
+Iran,92417681,1648195,Asia,SinRegion,SinSubregion
+Turquia,87685426,783562,Asia,SinRegion,SinSubregion
+Tailandia,71619863,513120,Asia,SinRegion,SinSubregion
+Myanmar,54850648,676578,Asia,SinRegion,SinSubregion
+Corea del Sur,51667029,100210,Asia,SinRegion,SinSubregion
+Irak,47020774,438317,Asia,SinRegion,SinSubregion
+Afganistan,43844111,652230,Asia,SinRegion,SinSubregion
+Yemen,41773878,527968,Asia,SinRegion,SinSubregion
+Uzbekistan,37053428,447400,Asia,SinRegion,SinSubregion
+Malasia,35977838,330803,Asia,SinRegion,SinSubregion
+Arabia Saudita,34566328,2149690,Asia,SinRegion,SinSubregion
+Nepal,29618118,147181,Asia,SinRegion,SinSubregion
+Corea del Norte,26571036,120538,Asia,SinRegion,SinSubregion
+Siria,25620427,185180,Asia,SinRegion,SinSubregion
+Sri Lanka,23229470,65610,Asia,SinRegion,SinSubregion
+Kazajistan,20843754,2724900,Asia,SinRegion,SinSubregion
+Camboya,17847982,181035,Asia,SinRegion,SinSubregion
+Jordania,11548680,89342,Asia,SinRegion,SinSubregion
+Israel,9422030,20770,Asia,SinRegion,SinSubregion
+Libano,5063073,10452,Asia,SinRegion,SinSubregion
+Singapur,6102187,710,Asia,SinRegion,SinSubregion
+Turkmenistan,6635930,488100,Asia,SinRegion,SinSubregion
+Estados Unidos,347275807,9833517,America,SinRegion,SinSubregion
+Brasil,212812405,8515767,America,SinRegion,SinSubregion
+Mexico,131946900,1964375,America,SinRegion,SinSubregion
+Colombia,53425635,1141748,America,SinRegion,SinSubregion
+Argentina,45851378,2780400,America,SinRegion,SinSubregion
+Canada,40126723,9984670,America,SinRegion,SinSubregion
+Peru,34576665,1285216,America,SinRegion,SinSubregion
+Venezuela,28516896,916445,America,SinRegion,SinSubregion
+Chile,19859921,756102,America,SinRegion,SinSubregion
+Guatemala,18687881,108889,America,SinRegion,SinSubregion
+Ecuador,18289896,283561,America,SinRegion,SinSubregion
+Bolivia,12669389,1098581,America,SinRegion,SinSubregion
+Paraguay,7059155,406752,America,SinRegion,SinSubregion
+Costa Rica,5250485,51100,America,SinRegion,SinSubregion
+Panama,4563810,75420,America,SinRegion,SinSubregion
+Uruguay,3424132,176215,America,SinRegion,SinSubregion
+Cuba,11194449,110860,America,SinRegion,SinSubregion
+Honduras,10959395,112492,America,SinRegion,SinSubregion
+Republica Dominicana,11559853,48671,America,SinRegion,SinSubregion
+El Salvador,6409292,21041,America,SinRegion,SinSubregion
+Nicaragua,7192931,130373,America,SinRegion,SinSubregion
+Nigeria,237527782,923768,Africa,SinRegion,SinSubregion
+Etiopia,135472051,1104300,Africa,SinRegion,SinSubregion
+Egipto,118365995,1001450,Africa,SinRegion,SinSubregion
+Republica Democratica del Congo,112832473,2344858,Africa,SinRegion,SinSubregion
+Tanzania,70545865,947300,Africa,SinRegion,SinSubregion
+Sudafrica,64747319,1219090,Africa,SinRegion,SinSubregion
+Kenia,57532493,580367,Africa,SinRegion,SinSubregion
+Sudan,51662147,1861484,Africa,SinRegion,SinSubregion
+Uganda,51384894,241550,Africa,SinRegion,SinSubregion
+Argelia,47435312,2381741,Africa,SinRegion,SinSubregion
+Angola,39040039,1246700,Africa,SinRegion,SinSubregion
+Marruecos,38430770,446550,Africa,SinRegion,SinSubregion
+Mozambique,35631653,799380,Africa,SinRegion,SinSubregion
+Ghana,35064272,238533,Africa,SinRegion,SinSubregion
+Madagascar,32740678,587041,Africa,SinRegion,SinSubregion
+Costa de Marfil,32711547,322463,Africa,SinRegion,SinSubregion
+Camerun,29879337,475442,Africa,SinRegion,SinSubregion
+Niger,27917831,1267000,Africa,SinRegion,SinSubregion
+Mali,25198821,1240192,Africa,SinRegion,SinSubregion
+Burkina Faso,24074580,274200,Africa,SinRegion,SinSubregion
+Malaui,22216120,118484,Africa,SinRegion,SinSubregion
+Zambia,21913874,752618,Africa,SinRegion,SinSubregion
+Chad,21003705,1284000,Africa,SinRegion,SinSubregion
+Somalia,19654739,637657,Africa,SinRegion,SinSubregion
+Senegal,18931966,196722,Africa,SinRegion,SinSubregion
+Libia,7424927,1759540,Africa,SinRegion,SinSubregion
+Rusia,143997393,17098246,Europa,SinRegion,SinSubregion
+Alemania,84075075,357581,Europa,SinRegion,SinSubregion
+Reino Unido,69551332,244381,Europa,SinRegion,SinSubregion
+Francia,66650804,543941,Europa,SinRegion,SinSubregion
+Italia,59146260,301958,Europa,SinRegion,SinSubregion
+Espana,47889958,498485,Europa,SinRegion,SinSubregion
+Ucrania,38980376,603549,Europa,SinRegion,SinSubregion
+Polonia,38140910,312679,Europa,SinRegion,SinSubregion
+Rumania,18908650,238298,Europa,SinRegion,SinSubregion
+Paises Bajos,18346819,41543,Europa,SinRegion,SinSubregion
+Belgica,11802960,30528,Europa,SinRegion,SinSubregion
+Suecia,10691456,438574,Europa,SinRegion,SinSubregion
+Grecia,10285918,131957,Europa,SinRegion,SinSubregion
+Portugal,10228399,91424,Europa,SinRegion,SinSubregion
+Hungria,9951336,93025,Europa,SinRegion,SinSubregion
+Bielorrusia,9441673,207600,Europa,SinRegion,SinSubregion
+Austria,9052069,83878,Europa,SinRegion,SinSubregion
+Suiza,8931398,41291,Europa,SinRegion,SinSubregion
+Noruega,5613437,323772,Europa,SinRegion,SinSubregion
+Irlanda,5224884,69825,Europa,SinRegion,SinSubregion
+Finlandia,5553654,336884,Europa,SinRegion,SinSubregion
+Dinamarca,5953041,42947,Europa,SinRegion,SinSubregion
+Eslovaquia,5716942,49035,Europa,SinRegion,SinSubregion
+Bulgaria,6619141,110372,Europa,SinRegion,SinSubregion
+Serbia,6583944,77589,Europa,SinRegion,SinSubregion
+Republica Checa,10512836,78871,Europa,SinRegion,SinSubregion
+Croacia,3993414,56594,Europa,SinRegion,SinSubregion
+Australia,26974026,7741220,Oceania,SinRegion,SinSubregion
+Nueva Zelanda,5312781,268838,Oceania,SinRegion,SinSubregion
