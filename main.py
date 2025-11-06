@@ -1,128 +1,90 @@
-"""
-main.py - Programa principal que utiliza funciones.py
-
-Uso rápido:
-- Ejecutar: python main.py
-- Al primer run se intentará migrar los datos desde 'paises.csv' hacia la jerarquía en 'datos/'.
-- Luego usar el menú para Alta/Lectura/Modificación/Eliminación/Estadísticas.
-"""
-
-import sys
-from funciones import (
-    migrar_datos, obtener_lista_global, buscar_pais_nombre, alta_pais,
-    ordenar_global, estadisticas_globales, modificar_item, eliminar_item
-)
+import funciones as fn
 
 def mostrar_menu():
-    print("\n--- Menú Principal ---")
-    print("1. Migrar datos desde paises.csv (si no se hizo)")
-    print("2. Mostrar todos los países (lectura recursiva)")
-    print("3. Buscar país por nombre (global)")
-    print("4. Alta de país (jerárquico)")
-    print("5. Modificar país")
-    print("6. Eliminar país")
-    print("7. Ordenar (global)")
-    print("8. Estadísticas globales")
-    print("9. Eliminar duplicados en un archivo CSV")
-    print("0. Salir")
-
-def solicitar_pais_interactivo() -> dict:
-    print("\nAlta de país: completa los datos solicitados.")
-    nombre = input("Nombre: ").strip()
-    try:
-        poblacion = int(input("Población (número): ").strip())
-    except ValueError:
-        print("Población inválida.")
-        return {}
-    try:
-        superficie = int(input("Superficie (km2) (número): ").strip())
-    except ValueError:
-        print("Superficie inválida.")
-        return {}
-    continente = input("Continente: ").strip() or 'SinContinente'
-    region = input("Región: ").strip() or 'SinRegion'
-    subregion = input("Subregión: ").strip() or 'SinSubregion'
-    return {
-        'nombre': nombre,
-        'poblacion': poblacion,
-        'superficie': superficie,
-        'continente': continente,
-        'region': region,
-        'subregion': subregion
-    }
+    """Imprime el menú de opciones en pantalla."""
+    print("\n--- 🗂️ Sistema de Gestión Jerárquica (Países) ---")
+    print("Operaciones de Base de Datos:")
+    print(" 1. Importar datos iniciales (desde paises.csv)")
+    print(" 2. Alta de nuevo país (Crear)")
+    print("\nOperaciones de Consulta (Usan Lectura Recursiva):")
+    print(" 3. Mostrar todos los países (Lectura Global)")
+    print(" 4. Filtrar países (Por Continente o Región)")
+    print(" 5. Modificar país (Actualizar)")
+    print(" 6. Eliminar país (Borrar)")
+    print(" 7. Ordenar países (Por Nombre o Población)")
+    print(" 8. Ver Estadísticas Globales")
+    print("\n 0. Salir")
+    print("-------------------------------------------------")
 
 def main():
-    # Intentar migración inicial automática (silenciosa)
-    migrar_datos('paises.csv')
+    """Función principal que maneja el bucle del menú."""
+    
+    lista_global_memoria = None
+    datos_necesitan_recarga = True 
+
     while True:
         mostrar_menu()
-        opcion = input("\nIngrese opción: ").strip()
+        opcion = input("Seleccione una opción: ").strip()
+
+        # (Cumple Fase 3 - Carga centralizada recursiva)
+        if opcion in ['3', '4', '5', '6', '7', '8'] and datos_necesitan_recarga:
+            print("\nCargando datos desde la estructura de carpetas (recursivo)...")
+            lista_global_memoria = fn.obtener_todos_los_datos()
+            datos_necesitan_recarga = False
+            if not lista_global_memoria and opcion != '3':
+                print("No se encontraron datos. Intente 'Importar' o 'Dar de Alta' primero.")
+
+
         if opcion == '1':
-            migrar_datos('paises.csv')
+            fn.importar_datos_iniciales('paises.csv')
+            datos_necesitan_recarga = True 
+        
         elif opcion == '2':
-            lista = obtener_lista_global()
-            if not lista:
-                print("No hay registros.")
-            else:
-                for p in lista:
-                    print(f"{p.get('nombre')} - {p.get('continente')} / {p.get('region')} / {p.get('subregion')}")
+            # (Cumple Fase 3 - Alta)
+            print("\n--- Alta de Nuevo País ---")
+            continente = fn.validar_no_vacio("Ingrese Continente (Nivel 1): ")
+            region = fn.validar_no_vacio("Ingrese Región (Nivel 2): ")
+            pais = fn.validar_no_vacio("Ingrese Nombre del País: ")
+            poblacion = fn.validar_numero_positivo("Ingrese Población (numérico): ")
+            superficie = fn.validar_numero_positivo("Ingrese Superficie (numérico): ")
+            
+            fn.alta_item(continente, region, pais, poblacion, superficie)
+            datos_necesitan_recarga = True
+
         elif opcion == '3':
-            termino = input("Término a buscar: ").strip()
-            res = buscar_pais_nombre(None, termino)
-            if not res:
-                print("No se encontraron resultados.")
-            else:
-                for p in res:
-                    print(p)
+            # (Cumple Fase 3 - Mostrar)
+            fn.mostrar_items(lista_global_memoria)
+
         elif opcion == '4':
-            pais = solicitar_pais_interactivo()
-            if pais:
-                ok = alta_pais(pais)
-                print("Alta exitosa." if ok else "Alta fallida.")
+            # (Cumple Fase 3 - Filtrado)
+            fn.filtrar_items(lista_global_memoria)
+
         elif opcion == '5':
-            continente = input("Continente donde está el país: ").strip()
-            region = input("Región: ").strip()
-            subregion = input("Subregión: ").strip()
-            nombre = input("Nombre del país a modificar: ").strip()
-            campo = input("Campo a modificar (nombre/poblacion/superficie/continente/region/subregion): ").strip()
-            nuevo = input("Nuevo valor: ").strip()
-            # intentar convertir numeros si corresponde
-            if campo in ('poblacion','superficie'):
-                try:
-                    nuevo = int(nuevo)
-                except ValueError:
-                    print("Valor numérico inválido.")
-                    continue
-            OK = modificar_item(continente, region, subregion, nombre, campo, nuevo)
-            print("Modificado." if OK else "No modificado.")
+            # (Cumple Fase 3 - Modificar)
+            lista_global_memoria = fn.modificar_item(lista_global_memoria)
+            
         elif opcion == '6':
-            continente = input("Continente donde está el país: ").strip()
-            region = input("Región: ").strip()
-            subregion = input("Subregión: ").strip()
-            nombre = input("Nombre del país a eliminar: ").strip()
-            OK = eliminar_item(continente, region, subregion, nombre)
-            print("Eliminado." if OK else "No eliminado.")
+            # (Cumple Fase 3 - Eliminar)
+            lista_global_memoria = fn.eliminar_item(lista_global_memoria)
+
         elif opcion == '7':
-            criterio = input("Criterio (nombre/poblacion/superficie): ").strip()
-            orden = input("Orden (asc/desc): ").strip().lower()
-            rev = (orden == 'desc')
-            ordenados = ordenar_global(criterio, reverse=rev)
-            for p in ordenados:
-                print(f"{p.get('nombre')} - {p.get('poblacion'):,} - {p.get('superficie'):,}")
+            # (Cumple Fase 3 - Adicionales)
+            fn.ordenar_items(lista_global_memoria)
+
         elif opcion == '8':
-            est = estadisticas_globales()
-            print(est)
-        elif opcion == "9":
-            print("\n--- Limpieza de duplicados ---")
-            ruta = input("Ingrese la ruta completa del archivo CSV a limpiar (por ejemplo: datos/America/SinRegion/SinSubregion/paises.csv): ").strip()
-            from funciones import limpiar_duplicados
-            limpiar_duplicados(ruta)
+            # (Cumple Fase 3 - Adicionales)
+            fn.calcular_estadisticas(lista_global_memoria)
+
         elif opcion == '0':
-            print("Saliendo...")
+            print("Saliendo del programa...")
             break
+        
         else:
-            print("Opción inválida.")
+            print("Opción no válida. Intente de nuevo.")
 
+        if opcion != '0':
+            input("\nPresione Enter para continuar...")
 
-if __name__ == '__main__':
+# --- Punto de entrada estándar de Python ---
+if __name__ == "__main__":
     main()

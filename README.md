@@ -1,44 +1,69 @@
-# Proyecto_Paises: El Desafío Jerárquico (Parcial 2)
+# Parcial 2 - Gestión Jerárquica de Datos (El Desafío Jerárquico)
 
-¡Hola! Este proyecto es la entrega final integradora y representa nuestro paso de gestionar datos en un solo archivo a dominar la **persistencia jerárquica** en el sistema de archivos.
+Este proyecto es la implementación del Parcial 2 de Programación 1, que consiste en un sistema de gestión de datos (CRUD) que utiliza una estructura de persistencia basada en el sistema de archivos, abandonando el modelo de un CSV único.
 
-## La Estructura que Elegimos
+El objetivo principal es aplicar conocimientos de manipulación de archivos (`os`), recursividad y buenas prácticas de modularización.
 
-[cite_start]Decidimos modelar el mundo usando una jerarquía de países, lo cual requería tres niveles de profundidad (como se solicitaba en el parcial [cite: 22, 141]):
+---
 
-`datos/`
-└── <Continente> (Nivel 1)
-    └── <Región> (Nivel 2)
-        └── <Subregión> (Nivel 3)
-            └── `paises.csv` (Aquí viven los datos)
+## 1. Diseño y Estructura de Datos (Fase 1)
 
-Si un país no tiene una región o subregión definida en el CSV inicial, usamos los filtros `SinRegion` o `SinSubregion` para mantener la integridad de la estructura.
+Se cumple con el requisito de definir un dominio y una jerarquía de 3 niveles.
 
-## Lo Más Importante: Los Pilares del Proyecto
+* **Dominio Elegido:** Organización Geográfica de Países.
+* **Ítems Individuales:** Cada país se representa internamente como un **diccionario** de Python  (ej. `{'Pais': 'Argentina', 'Poblacion': 45000000, ...}`).
 
-[cite_start]Estos son los puntos que demuestran que realmente entendimos el núcleo del parcial[cite: 118, 119]:
+### Lógica de Almacenamiento Jerárquico
 
-1.  **La Función Recursiva:** El corazón de la lectura de datos es nuestra función `leer_recursivo()`. Se encarga de entrar en cada carpeta, buscar *todos* los `paises.csv` que existan en cualquier nivel de la jerarquía, y consolidar los datos en una sola lista gigante en Python. [cite_start]¡Adiós a los bucles simples! [cite: 44, 165]
-2.  [cite_start]**Sistema de Archivos Dinámico:** Utilizamos la librería **`os`** [cite: 39] para un manejo robusto:
-    * [cite_start]Crea automáticamente cualquier carpeta (`Continente`, `Región`, `Subregión`) que no exista al dar de alta un nuevo país[cite: 41, 153].
-    * [cite_start]Todo el manejo de I/O se hace con la cláusula **`with open()`** para evitar fugas de recursos[cite: 43, 155].
-3.  **Identificación de Ítem:** Para las funciones de `Modificar` y `Eliminar`, un país se identifica por su ubicación completa: `Continente + Región + Subregión + Nombre`.
+La estructura de 3 niveles definida se mapea directamente a la estructura de carpetas de la siguiente manera:
 
-## Funcionalidades del Menú (CRUD y Más)
+1.  **Nivel 1 (Carpeta):** `Continente` (Ej: `DB/America/`)
+2.  **Nivel 2 (Carpeta):** `Región` (Ej: `DB/America/Sur/`)
+3.  **Nivel 3 (Archivo):** `Datos.csv` (Ej: `DB/America/Sur/Datos.csv`)
 
-El programa se ejecuta desde `main.py` y presenta un menú completo para manipular los datos:
+Este archivo final (`Datos.csv`) es el que almacena los ítems (países) que pertenecen a esa ruta jerárquica específica.
 
-* **Migración Inicial:** La primera vez que ejecutas `main.py`, automáticamente toma los datos de nuestro `paises.csv` plano y los distribuye a la nueva estructura de carpetas jerárquica.
-* **CRUD Completo:**
-    * **Alta:** Inserta nuevos países en la jerarquía correcta.
-    * **Lectura:** Muestra todos los países (resultado de la función recursiva).
-    * [cite_start]**Modificación/Eliminación:** Permite actualizar campos o dar de baja países específicos[cite: 76, 89].
-* **Consultas:** Puedes buscar cualquier país por nombre.
-* [cite_start]**Estadísticas Globales:** Calculamos promedios de población/superficie y el conteo total por continente[cite: 98].
-* [cite_start]**Ordenamiento:** Ordenamos la lista global por Nombre, Población o Superficie[cite: 97].
+La función de **Alta** (`funciones.py -> alta_item`) implementa esta lógica:
+1.  Recibe los 3 niveles (Continente, Región, y los datos del país).
+2.  Utiliza `os.makedirs(..., exist_ok=True)` para crear dinámicamente la estructura de carpetas (Nivel 1 y 2) si esta no existe.
+3.  Añade (modo `'a'`) el nuevo ítem (país) al archivo `Datos.csv` (Nivel 3) dentro de la ruta correspondiente.
 
-## Notas de Calidad
+---
 
-* [cite_start]**Modularización:** El código está organizado en `funciones.py` (lógica y persistencia) y `main.py` (interfaz y menú)[cite: 37, 181].
-* [cite_start]**Estilo:** Usamos indentación de 4 espacios consistentes (PEP8)[cite: 189].
-* [cite_start]**Robustez:** Implementamos `try...except` para capturar errores de formato (`ValueError`) y problemas de I/O[cite: 51, 52].
+## 2. Implementación Técnica (Fase 2)
+
+El proyecto se divide en `main.py` (menú y control) y `funciones.py` (lógica) para cumplir con la **modularización**.
+
+### Lectura Recursiva (Requisito Obligatorio)
+
+Para cumplir con la consigna de leer todos los datos de la jerarquía, se implementó la función `leer_datos_recursivo(ruta_actual)`:
+
+* **Paso Recursivo:** Si la función encuentra un directorio, se llama a sí misma (`.extend(leer_datos_recursivo(ruta_completa))`) para explorar ese subdirectorio.
+* **Caso Base:** Si la función encuentra un archivo que termina en `.csv`, lo lee usando `csv.DictReader` y añade los diccionarios a la lista.
+
+Esta función consolida todos los ítems de todos los archivos `Datos.csv` dispersos en una **única lista de diccionarios** , que luego es utilizada por el `main.py` para las operaciones de consulta, modificación, estadísticas y ordenamiento.
+
+### Manejo de Archivos y Excepciones
+
+* Toda la lectura y escritura de archivos se realiza de forma segura usando la cláusula `with open(...)`.
+* Se utiliza `try...except` para capturar `OSError` (errores al crear carpetas o escribir) y `FileNotFoundError`, como en la importación o al leer el directorio base.
+
+---
+
+## 3. Instrucciones de Uso
+
+Siga estos pasos para ejecutar el programa:
+
+1.  Asegúrese de tener los 4 archivos en la misma carpeta:
+    * `main.py`
+    * `funciones.py`
+    * `paises.csv` (Este es el archivo de origen para la importación)
+    * `README.md`
+2.  Abra una terminal en esa carpeta.
+3.  Ejecute el programa principal:
+    ```bash
+    python main.py
+    ```
+4.  **¡IMPORTANTE!** La primera vez que ejecute el programa, debe seleccionar la **Opción 1: Importar datos iniciales**.
+    * Esta opción leerá el `paises.csv`, borrará cualquier base de datos `DB/` antigua para evitar duplicados, y creará la estructura jerárquica de carpetas y archivos `Datos.csv` con los datos iniciales.
+5.  Una vez importados los datos, puede explorar el resto de las opciones del menú (CRUD, filtrado, estadísticas, etc.).

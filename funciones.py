@@ -1,355 +1,386 @@
-"""
-funciones.py
-Trabajo Práctico Integrador - Parcial 2
-
-Este módulo gestiona un sistema jerárquico de países con persistencia en archivos CSV.
-Cumple con los puntos del parcial:
-- Estructura de 3 niveles (continente / región / subregión)
-- Lectura recursiva de carpetas
-- CRUD completo (alta, lectura, modificación, eliminación)
-- Manejo seguro de archivos CSV con 'with open()'
-- Uso de la librería os
-- Código legible y con comentarios explicativos
-"""
-
-import csv
 import os
-from typing import List, Dict, Optional
-
-# Carpeta base donde se guarda toda la jerarquía
-DATOS_DIR = "datos"
+import csv
+import shutil
 
 
-# --------------------------------------------------------------------
-# Funciones auxiliares y de validación
-# --------------------------------------------------------------------
-
-def _mostrar_pais(pais: Dict) -> None:
-    """Muestra los datos de un país en formato ordenado y legible."""
-    print("\n------------------------------")
-    print(f"Nombre:     {pais.get('nombre')}")
-    print(f"Población:  {pais.get('poblacion'):,}")
-    print(f"Superficie: {pais.get('superficie'):,} km²")
-    print(f"Continente: {pais.get('continente')}")
-    print(f"Región:     {pais.get('region')}")
-    print(f"Subregión:  {pais.get('subregion')}")
-    print("------------------------------")
+BASE_DIR = "DB"  # Directorio raíz para la base de datos jerárquica
+HEADERS = ['Pais', 'Poblacion', 'Superficie'] # Cabeceras para los CSV internos
 
 
-def crear_ruta_y_archivo(continente: str, region: str, subregion: str) -> str:
-    """
-    Crea las carpetas necesarias según el continente, región y subregión.
-    Devuelve la ruta completa del archivo CSV donde se guardará el país.
-    """
-    ruta = os.path.join(DATOS_DIR, continente, region, subregion)
-    os.makedirs(ruta, exist_ok=True)  # si no existen, las crea
-    return os.path.join(ruta, "paises.csv")
 
+def validar_no_vacio(texto):
+    """Valida que la entrada no esté vacía después de quitar espacios."""
+    while True:
+        entrada = input(texto).strip()
+        if entrada:
+            return entrada
+        else:
+            print("Error: El campo no puede estar vacío.")
 
-def _es_valido_pais(pais: Dict) -> bool:
-    """
-    Verifica que el país tenga todos los datos correctos antes de guardarlo.
-    Retorna True si está todo bien, False si falta algo o hay error.
-    """
-    try:
-        nombre = str(pais.get("nombre", "")).strip()
-        if not nombre:
-            return False
-        poblacion = int(pais.get("poblacion", 0))
-        superficie = int(pais.get("superficie", 0))
-        if poblacion < 0 or superficie < 0:
-            return False
-    except (ValueError, TypeError):
-        return False
-    return True
-
-
-# --------------------------------------------------------------------
-# CRUD: Alta (Create)
-# --------------------------------------------------------------------
-
-def alta_pais(pais: Dict) -> bool:
-    """
-    Da de alta un país nuevo en su carpeta correspondiente.
-    Si el archivo no existe, lo crea con encabezado.
-    """
-    if not _es_valido_pais(pais):
-        print("Error: datos del país inválidos o incompletos.")
-        return False
-
-    ruta_csv = crear_ruta_y_archivo(pais["continente"], pais["region"], pais["subregion"])
-    existe_encabezado = os.path.exists(ruta_csv)
-
-    try:
-        with open(ruta_csv, mode="a", newline="", encoding="utf-8") as archivo:
-            campos = ["nombre", "poblacion", "superficie", "continente", "region", "subregion"]
-            escritor = csv.DictWriter(archivo, fieldnames=campos)
-            if not existe_encabezado:
-                escritor.writeheader()
-            escritor.writerow({
-                "nombre": pais["nombre"].strip(),
-                "poblacion": int(pais["poblacion"]),
-                "superficie": int(pais["superficie"]),
-                "continente": pais["continente"],
-                "region": pais["region"],
-                "subregion": pais["subregion"]
-            })
-        return True
-    except Exception as e:
-        print(f"Error al escribir el archivo CSV: {e}")
-        return False
-
-
-# --------------------------------------------------------------------
-# Lectura recursiva (Read)
-# --------------------------------------------------------------------
-
-def leer_recursivo(ruta_base: str = DATOS_DIR) -> List[Dict]:
-    """
-    Función recursiva que recorre todas las carpetas desde 'datos/'
-    y lee cada 'paises.csv' encontrado.
-    Devuelve una lista única con todos los países del sistema.
-    """
-    paises = []
-
-    if not os.path.exists(ruta_base):
-        return paises
-
-    for entrada in os.scandir(ruta_base):
-        if entrada.is_dir():
-            # Si es carpeta, llamo de nuevo a la función (recursividad)
-            paises.extend(leer_recursivo(entrada.path))
-        elif entrada.is_file() and entrada.name.lower().endswith(".csv"):
-            try:
-                # saco continente, región y subregión desde la ruta
-                partes = os.path.normpath(entrada.path).split(os.sep)
-                if DATOS_DIR in partes:
-                    i = partes.index(DATOS_DIR)
-                    continente = partes[i + 1] if len(partes) > i + 1 else ""
-                    region = partes[i + 2] if len(partes) > i + 2 else ""
-                    subregion = partes[i + 3] if len(partes) > i + 3 else ""
-                else:
-                    continente = region = subregion = ""
-
-                # leo el CSV y sumo sus países a la lista
-                with open(entrada.path, mode="r", newline="", encoding="utf-8") as f:
-                    lector = csv.DictReader(f)
-                    for fila in lector:
-                        fila["poblacion"] = int(fila.get("poblacion") or 0)
-                        fila["superficie"] = int(fila.get("superficie") or 0)
-                        fila.setdefault("continente", continente)
-                        fila.setdefault("region", region)
-                        fila.setdefault("subregion", subregion)
-                        paises.append(fila)
-            except Exception as e:
-                print(f"Error al leer {entrada.path}: {e}")
-
-    return paises
-
-
-# --------------------------------------------------------------------
-# Migración desde un CSV original
-# --------------------------------------------------------------------
-
-def migrar_datos(archivo_fuente: str = "paises.csv") -> int:
-    """
-    Migra todos los países desde un CSV plano a la estructura jerárquica.
-    Si no hay región/subregión, usa 'SinRegion' y 'SinSubregion'.
-    """
-    migrados = 0
-    if not os.path.exists(archivo_fuente):
-        print("No se encontró el archivo de origen.")
-        return 0
-
-    with open(archivo_fuente, mode="r", newline="", encoding="utf-8") as f:
-        lector = csv.DictReader(f)
-        for fila in lector:
-            pais = {
-                "nombre": fila.get("nombre", "").strip(),
-                "poblacion": int(fila.get("poblacion", 0) or 0),
-                "superficie": int(fila.get("superficie", 0) or 0),
-                "continente": fila.get("continente", "").strip() or "SinContinente",
-                "region": fila.get("region", "").strip() or "SinRegion",
-                "subregion": fila.get("subregion", "").strip() or "SinSubregion"
-            }
-
-            if alta_pais(pais):
-                migrados += 1
-
-    print(f"Migración completa: {migrados} países migrados correctamente.")
-    return migrados
-
-
-# --------------------------------------------------------------------
-# Funciones de búsqueda y acceso a la lista global
-# --------------------------------------------------------------------
-
-def buscar_pais_nombre(lista_paises: Optional[List[Dict]] = None, termino: str = "") -> List[Dict]:
-    """Busca un país por nombre (no distingue mayúsculas/minúsculas)."""
-    if lista_paises is None:
-        lista_paises = leer_recursivo()
-    termino = termino.lower().strip()
-    return [p for p in lista_paises if termino in p.get("nombre", "").lower()]
-
-
-def obtener_lista_global() -> List[Dict]:
-    """Devuelve la lista completa de países usando la función recursiva."""
-    return leer_recursivo()
-
-
-# --------------------------------------------------------------------
-# Modificación (Update) y Eliminación (Delete)
-# --------------------------------------------------------------------
-
-def modificar_item(continente: str, region: str, subregion: str, nombre: str, campo: str, nuevo_valor) -> bool:
-    """Modifica un país ya existente dentro de su CSV."""
-    ruta_csv = os.path.join(DATOS_DIR, continente, region, subregion, "paises.csv")
-    if not os.path.exists(ruta_csv):
-        print("No se encontró el archivo del país.")
-        return False
-
-    try:
-        with open(ruta_csv, mode="r", newline="", encoding="utf-8") as f:
-            filas = list(csv.DictReader(f))
-    except Exception as e:
-        print(f"Error al leer el CSV: {e}")
-        return False
-
-    modificado = False
-    for fila in filas:
-        if fila["nombre"].strip().lower() == nombre.strip().lower():
-            if campo in fila:
-                fila[campo] = nuevo_valor
-                modificado = True
+def validar_numero_positivo(texto):
+    """Valida que la entrada sea un número (entero) y sea positivo."""
+    while True:
+        entrada = input(texto).strip()
+        if entrada.isdigit():
+            numero = int(entrada)
+            if numero > 0:
+                return numero
             else:
-                print("El campo ingresado no existe.")
-                return False
+                print("Error: El número debe ser positivo y mayor a cero.")
+        else:
+            print("Error: Debe ingresar un valor numérico entero.")
 
-    if not modificado:
-        print("No se encontró el país para modificar.")
-        return False
 
+
+def obtener_ruta_csv(continente, region):
+    
+    
+    ruta_directorio = os.path.join(BASE_DIR, continente, region)
+    
+    
+    ruta_csv = os.path.join(ruta_directorio, "Datos.csv")
+    
+    return ruta_directorio, ruta_csv
+
+def alta_item(continente, region, pais, poblacion, superficie):
     try:
-        with open(ruta_csv, mode="w", newline="", encoding="utf-8") as f:
-            campos = ["nombre", "poblacion", "superficie", "continente", "region", "subregion"]
-            escritor = csv.DictWriter(f, fieldnames=campos)
-            escritor.writeheader()
-            escritor.writerows(filas)
-        print("País modificado correctamente.")
-        return True
+        ruta_directorio, ruta_csv = obtener_ruta_csv(continente, region)
+        
+        os.makedirs(ruta_directorio, exist_ok=True)
+
+        nuevo_item = {
+            'Pais': pais,
+            'Poblacion': poblacion,
+            'Superficie': superficie
+        }
+        
+        escribir_cabeceras = not os.path.exists(ruta_csv)
+
+        with open(ruta_csv, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=HEADERS)
+            
+            if escribir_cabeceras:
+                writer.writeheader()
+                
+            writer.writerow(nuevo_item)
+            
+        print(f"Éxito: País '{pais}' agregado en {ruta_csv}")
+
+    except OSError as e: 
+        print(f"Error de sistema al crear directorios o escribir archivo: {e}")
     except Exception as e:
-        print(f"Error al guardar los cambios: {e}")
-        return False
+        print(f"Error inesperado en alta_item: {e}")
 
 
-def eliminar_item(continente: str, region: str, subregion: str, nombre: str) -> bool:
-    """Elimina un país del archivo correspondiente."""
-    ruta_csv = os.path.join(DATOS_DIR, continente, region, subregion, "paises.csv")
-    if not os.path.exists(ruta_csv):
-        print("No se encontró el archivo.")
-        return False
-
+def leer_datos_recursivo(ruta_actual):
+    items_consolidados = [] 
+    
     try:
-        with open(ruta_csv, mode="r", newline="", encoding="utf-8") as f:
-            filas = list(csv.DictReader(f))
-    except Exception as e:
-        print(f"Error al leer el CSV: {e}")
-        return False
+        for nombre_entrada in os.listdir(ruta_actual):
+            ruta_completa = os.path.join(ruta_actual, nombre_entrada)
+            
+            if os.path.isdir(ruta_completa):
+                # Si es un directorio, volvemos a llamar a la función
+                items_consolidados.extend(leer_datos_recursivo(ruta_completa))
+                
+            elif os.path.isfile(ruta_completa) and nombre_entrada.endswith('.csv'):
+                
+                
+                
+                # Obtenemos la jerarquía (Continente, Region) desde la ruta
+                partes_ruta = ruta_actual.split(os.sep)
+                continente = partes_ruta[1] if len(partes_ruta) > 1 else "N/A"
+                region = partes_ruta[2] if len(partes_ruta) > 2 else "N/A"
 
-    nuevas = [r for r in filas if r["nombre"].strip().lower() != nombre.strip().lower()]
-    if len(nuevas) == len(filas):
-        print("No se encontró el país a eliminar.")
-        return False
+                
+                with open(ruta_completa, 'r', newline='', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for fila in reader:
+                        
+                        fila['Continente'] = continente
+                        fila['Region'] = region
+                        items_consolidados.append(fila)
 
+    except FileNotFoundError: 
+        print(f"Error: El directorio base '{BASE_DIR}' no existe.")
+    except OSError as e: 
+        print(f"Error de sistema al leer el directorio {ruta_actual}: {e}")
+        
+    return items_consolidados
+
+def obtener_todos_los_datos():
+    if not os.path.exists(BASE_DIR):
+        print(f"Directorio '{BASE_DIR}' no encontrado. Creando...")
+        try:
+            os.makedirs(BASE_DIR)
+        except OSError as e:
+            print(f"No se pudo crear el directorio base: {e}")
+            return []
+    
+    return leer_datos_recursivo(BASE_DIR)
+
+# Funciones de Importación
+
+def importar_datos_iniciales(archivo_origen):
+    print(f"\nLimpiando base de datos anterior en '{BASE_DIR}'...")
     try:
-        with open(ruta_csv, mode="w", newline="", encoding="utf-8") as f:
-            campos = ["nombre", "poblacion", "superficie", "continente", "region", "subregion"]
-            escritor = csv.DictWriter(f, fieldnames=campos)
-            escritor.writeheader()
-            escritor.writerows(nuevas)
-        print("País eliminado correctamente.")
-        return True
-    except Exception as e:
-        print(f"Error al sobrescribir el archivo: {e}")
-        return False
+        if os.path.exists(BASE_DIR):
+            shutil.rmtree(BASE_DIR) # Borra la carpeta y todo su contenido
+        
+        # 2. Recrear el directorio base vacío
+        os.makedirs(BASE_DIR)
+        print("Directorio limpiado. Comenzando nueva importación...")
+        
+    except OSError as e:
+        print(f"Error al limpiar el directorio '{BASE_DIR}': {e}")
+        print("La importación no puede continuar. Revise los permisos.")
+        return
 
-
-# --------------------------------------------------------------------
-# Ordenamiento y Estadísticas
-# --------------------------------------------------------------------
-
-def ordenar_global(criterio: str = "nombre", reverse: bool = False) -> List[Dict]:
-    """Ordena la lista global de países según nombre, población o superficie."""
-    lista = obtener_lista_global()
-
-    if criterio == "nombre":
-        return sorted(lista, key=lambda p: p["nombre"].lower(), reverse=reverse)
-    elif criterio == "poblacion":
-        return sorted(lista, key=lambda p: int(p["poblacion"]), reverse=reverse)
-    elif criterio == "superficie":
-        return sorted(lista, key=lambda p: int(p["superficie"]), reverse=reverse)
-    else:
-        return lista
-
-
-def estadisticas_globales() -> Dict:
-    """
-    Calcula estadísticas generales:
-    - cantidad total de países
-    - promedios de población y superficie
-    - cantidad por continente
-    """
-    lista = obtener_lista_global()
-    total = len(lista)
-    if total == 0:
-        return {"total": 0, "promedio_poblacion": 0, "promedio_superficie": 0, "por_continente": {}}
-
-    suma_pob = sum(int(p["poblacion"]) for p in lista)
-    suma_sup = sum(int(p["superficie"]) for p in lista)
-
-    conteo = {}
-    for p in lista:
-        c = p.get("continente", "SinContinente")
-        conteo[c] = conteo.get(c, 0) + 1
-
-    return {
-        "total": total,
-        "promedio_poblacion": suma_pob / total,
-        "promedio_superficie": suma_sup / total,
-        "por_continente": conteo
-    }
-
-# --------------------------------------------------------------------
-# Limpieza de duplicados (utilidad opcional)
-# --------------------------------------------------------------------
-
-def limpiar_duplicados(ruta_csv: str) -> None:
-    """
-    Elimina filas duplicadas dentro de un mismo archivo CSV según el nombre del país.
-    Se queda solo con la primera aparición de cada país.
-    """
-    if not os.path.exists(ruta_csv):
-        print("⚠️  No se encontró el archivo especificado.")
+    if not os.path.exists(archivo_origen):
+        print(f"Error: El archivo '{archivo_origen}' no se encuentra.")
         return
 
     try:
-        with open(ruta_csv, "r", newline="", encoding="utf-8") as f:
-            lector = csv.DictReader(f)
-            vistos = set()
-            filas_unicas = []
-
-            for fila in lector:
-                nombre = fila.get("nombre", "").strip().lower()
-                if nombre and nombre not in vistos:
-                    vistos.add(nombre)
-                    filas_unicas.append(fila)
-
-        with open(ruta_csv, "w", newline="", encoding="utf-8") as f:
-            escritor = csv.DictWriter(f, fieldnames=lector.fieldnames)
-            escritor.writeheader()
-            escritor.writerows(filas_unicas)
-
-        print(f"Duplicados eliminados correctamente en '{ruta_csv}'. "
-              f"Total final: {len(filas_unicas)} países.")
+        with open(archivo_origen, 'r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            contador = 0
+            for fila in reader:
+                try:
+                    alta_item(
+                        fila['Continente'],
+                        fila['Region'],
+                        fila['Pais'],
+                        int(fila['Poblacion']),
+                        int(fila['Superficie'])
+                    )
+                    contador += 1
+                except (ValueError, KeyError) as e:
+                    print(f"Error en formato de fila: {fila}. Detalle: {e}")
+                
+            print(f"\nImportación completada. {contador} países migrados a la estructura de carpetas.")
+            
+    except FileNotFoundError:
+        print(f"Error: Archivo '{archivo_origen}' no encontrado.")
     except Exception as e:
-        print(f"Error al limpiar duplicados: {e}")
+        print(f"Error inesperado durante la importación: {e}")
+
+# Funcionalidades Adicionales
+
+def mostrar_items(lista_items):
+    """(Cumple Fase 3 - Mostrar) Muestra la lista global de ítems."""
+    if not lista_items:
+        print("No hay ítems para mostrar.")
+        return
+
+    print("\n--- Listado Global de Países (Lectura Recursiva) ---")
+    print(f"{'País':<20} {'Población':<15} {'Superficie':<15} {'Continente':<15} {'Región':<15}")
+    print("-" * 80)
+    
+    for item in lista_items:
+        try:
+            poblacion = f"{int(item['Poblacion']):,}"
+            superficie = f"{int(item['Superficie']):,}"
+        except (ValueError, TypeError):
+            poblacion = item.get('Poblacion', 'N/A')
+            superficie = item.get('Superficie', 'N/A')
+
+        
+        print(f"{item['Pais']:<20} {poblacion:<15} {superficie:<15} {item['Continente']:<15} {item['Region']:<15}")
+    print("-" * 80)
+    print(f"Total de ítems: {len(lista_items)}")
+
+def filtrar_items(lista_global):
+    """(Cumple Fase 3 - Filtrado) Filtra la lista global."""
+    if not lista_global:
+        print("No hay datos para filtrar.")
+        return
+
+    print("Filtrar por: 1. Continente 2. Región")
+    op_filtro = input("Opción: ").strip()
+    termino_busqueda = input("Ingrese el término a buscar: ").strip().lower()
+    
+    resultados = []
+    if op_filtro == '1':
+        clave_filtro = 'Continente'
+    elif op_filtro == '2':
+        clave_filtro = 'Region'
+    else:
+        print("Opción no válida.")
+        return
+        
+    for item in lista_global:
+        if item.get(clave_filtro, '').lower() == termino_busqueda:
+            resultados.append(item)
+
+    if not resultados:
+        print(f"No se encontraron ítems para '{termino_busqueda}'.")
+    else:
+        print(f"\n--- Resultados del Filtro ({len(resultados)} encontrados) ---")
+        mostrar_items(resultados)
+
+
+def reescribir_archivo_csv_especifico(continente, region, items_del_archivo):
+    """
+    (Usado por Modificar y Eliminar - Fase 3)
+    Sobrescribe (modo 'w') un único archivo CSV.
+    """
+    try:
+        _, ruta_csv = obtener_ruta_csv(continente, region)
+        
+        with open(ruta_csv, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=HEADERS)
+            writer.writeheader()
+            
+            for item in items_del_archivo:
+                item_a_escribir = {
+                    'Pais': item['Pais'],
+                    'Poblacion': item['Poblacion'],
+                    'Superficie': item['Superficie']
+                }
+                writer.writerow(item_a_escribir)
+                
+    except OSError as e: 
+        print(f"Error al reescribir el archivo {ruta_csv}: {e}")
+
+def modificar_item(lista_global):
+    """(Cumple Fase 3 - Modificación/Update)"""
+    if not lista_global:
+        print("La lista está vacía. No se puede modificar.")
+        return lista_global
+        
+    pais_a_modificar = input("Ingrese el nombre exacto del país a modificar: ").strip()
+    
+    item_encontrado = None
+    for item in lista_global:
+        if item['Pais'].lower() == pais_a_modificar.lower():
+            item_encontrado = item
+            break
+            
+    if not item_encontrado:
+        print(f"Error: País '{pais_a_modificar}' no encontrado.")
+        return lista_global
+
+    print(f"Modificando '{item_encontrado['Pais']}'. Deje en blanco para no cambiar.")
+    
+    nuevo_pais = input(f"Nuevo nombre ({item_encontrado['Pais']}): ").strip()
+    nueva_poblacion_str = input(f"Nueva población ({item_encontrado['Poblacion']}): ").strip()
+    nueva_superficie_str = input(f"Nueva superficie ({item_encontrado['Superficie']}): ").strip()
+
+    
+    if nuevo_pais:
+        item_encontrado['Pais'] = nuevo_pais
+    if nueva_poblacion_str:
+    
+        item_encontrado['Poblacion'] = validar_numero_positivo(f"Confirme nueva población ({nueva_poblacion_str}): ")
+    if nueva_superficie_str:
+        
+        item_encontrado['Superficie'] = validar_numero_positivo(f"Confirme nueva superficie ({nueva_superficie_str}): ")
+        
+
+    continente_afectado = item_encontrado['Continente']
+    region_afectada = item_encontrado['Region']
+    
+    items_para_el_archivo = [
+        i for i in lista_global 
+        if i['Continente'] == continente_afectado and i['Region'] == region_afectada
+    ]
+    
+    reescribir_archivo_csv_especifico(continente_afectado, region_afectada, items_para_el_archivo)
+    
+    print(f"Éxito: País '{item_encontrado['Pais']}' modificado.")
+    return lista_global
+
+def eliminar_item(lista_global):
+    """(Cumple Fase 3 - Eliminación/Delete)"""
+    if not lista_global:
+        print("La lista está vacía. No se puede eliminar.")
+        return lista_global
+
+    pais_a_eliminar = input("Ingrese el nombre exacto del país a eliminar: ").strip()
+    
+    item_encontrado = None
+    for item in lista_global:
+        if item['Pais'].lower() == pais_a_eliminar.lower():
+            item_encontrado = item
+            break
+            
+    if not item_encontrado: 
+        print(f"Error: País '{pais_a_eliminar}' no encontrado.")
+        return lista_global
+
+
+    lista_global.remove(item_encontrado)
+    
+
+    continente_afectado = item_encontrado['Continente']
+    region_afectada = item_encontrado['Region']
+    
+    items_para_el_archivo = [
+        i for i in lista_global 
+        if i['Continente'] == continente_afectado and i['Region'] == region_afectada
+    ]
+    
+    reescribir_archivo_csv_especifico(continente_afectado, region_afectada, items_para_el_archivo)
+    
+    print(f"Éxito: País '{item_encontrado['Pais']}' eliminado.")
+    return lista_global # Devuelve la lista actualizada
+
+def calcular_estadisticas(lista_global):
+    """Calcula y muestra estadísticas sobre la lista global."""
+    if not lista_global:
+        print("No hay datos para calcular estadísticas.")
+        return
+
+    total_items = len(lista_global)
+    suma_poblacion = 0
+    conteo_por_continente = {}
+
+    for item in lista_global:
+        try:
+            suma_poblacion += int(item['Poblacion'])
+        except (ValueError, TypeError):
+            pass 
+            
+        continente = item['Continente']
+        conteo_por_continente[continente] = conteo_por_continente.get(continente, 0) + 1
+
+    promedio_poblacion = (suma_poblacion / total_items) if total_items > 0 else 0
+
+    print("\n--- Estadísticas Globales ---")
+    print(f"Cantidad total de países: {total_items}")
+    print(f"Población total mundial (sumada): {suma_poblacion:,}")
+    print(f"Población promedio por país: {promedio_poblacion:,.2f}")
+    
+    print("\nConteo de países por Continente (Nivel 1):")
+    for continente, conteo in conteo_por_continente.items():
+        print(f"- {continente}: {conteo} país(es)")
+    print("-" * 30)
+
+def ordenar_items(lista_global):
+    """Ordena la lista global por dos criterios."""
+    if not lista_global:
+        print("No hay datos para ordenar.")
+        return
+
+    print("Seleccione criterio de ordenamiento:")
+    print("1. Por País (A-Z)")
+    print("2. Por Población (Mayor a Menor)")
+    opcion = input("Opción: ").strip()
+
+    lista_ordenada = []
+    
+    if opcion == '1':
+        lista_ordenada = sorted(lista_global, key=lambda item: item['Pais'])
+        print("\n--- Países ordenados por Nombre (A-Z) ---")
+    elif opcion == '2':
+        lista_ordenada = sorted(
+            lista_global, 
+            key=lambda item: int(item.get('Poblacion', 0) or 0), 
+            reverse=True
+        )
+        print("\n--- Países ordenados por Población (Mayor a Menor) ---")
+    else:
+        print("Opción no válida.")
+        return
+
+    mostrar_items(lista_ordenada)
