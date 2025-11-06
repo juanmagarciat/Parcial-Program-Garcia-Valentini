@@ -8,8 +8,6 @@ El objetivo principal es aplicar conocimientos de manipulación de archivos (`os
 
 ## 1. Diseño y Estructura de Datos (Fase 1)
 
-Se cumple con el requisito de definir un dominio y una jerarquía de 3 niveles.
-
 * **Dominio Elegido:** Organización Geográfica de Países.
 * **Ítems Individuales:** Cada país se representa internamente como un **diccionario** de Python  (ej. `{'Pais': 'Argentina', 'Poblacion': 45000000, ...}`).
 
